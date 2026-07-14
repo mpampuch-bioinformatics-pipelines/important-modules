@@ -1,0 +1,94 @@
+nextflow_process {
+
+    name "Test Process KMER-ORD_PROJECT"
+    script "modules/local/kmer-ord/project/main.nf"
+    process "KMER-ORD_PROJECT"
+    tag "modules"
+    tag "modules_local"
+    tag "kmer-ord"
+
+    // =========================================================================
+    // REAL TESTS
+    // =========================================================================
+
+    test("kmer-ord project") {
+        tag "slow"
+        options "-dump-hashes"
+        config "modules/local/kmer-ord/project/kmer-ord_project.test.config"
+
+        when {
+            process {
+                """
+                input[0] = [
+                    [ id: 'KAUST067' ],
+                    file('/ibex/scratch/projects/c2303/20260309_NEXTFLOW-ALGAE-TAXA-FROM-GENOME/DATA/KAUST067_purged.fa', checkIfExists: true)
+                ]
+                """
+            }
+        }
+
+        then {
+            DebugUtils.printTree(process.out)
+
+            assert process.success
+
+            // output directory
+            assert process.out.results.size() == 1
+            assert process.out.results[0][0].id == 'KAUST067'
+
+            def outdir = file(process.out.results[0][1])
+            assert outdir.exists()
+            assert outdir.isDirectory()
+
+            // versions
+            assert process.out.versions.size() == 1
+            assert path(process.out.versions[0]).readLines().any {
+                it.contains("kmer-ord")
+            }
+
+            assert snapshot(process.out).match()
+        }
+    }
+
+    // =========================================================================
+    // STUB TESTS
+    // =========================================================================
+
+    test("stub | kmer-ord project") {
+        tag "stub"
+        tag "fast"
+        options "-stub-run -dump-hashes"
+
+        when {
+            process {
+                """
+                input[0] = [
+                    [ id: 'KAUST067' ],
+                    file('/ibex/scratch/projects/c2303/20260309_NEXTFLOW-ALGAE-TAXA-FROM-GENOME/DATA/KAUST067_purged.fa', checkIfExists: true)
+                ]
+                """
+            }
+        }
+
+        then {
+            DebugUtils.printTree(process.out)
+
+            assert process.success
+
+            assert process.out.results.size() == 1
+            assert process.out.results[0][0].id == 'KAUST067'
+
+            def outdir = file(process.out.results[0][1])
+            assert outdir.exists()
+            assert outdir.isDirectory()
+
+            // stub should create the placeholder file
+            assert file("${outdir}/stub.txt").exists()
+
+            assert process.out.versions.size() == 1
+
+            assert snapshot(process.out).match()
+        }
+    }
+
+}
