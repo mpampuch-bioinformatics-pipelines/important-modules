@@ -1,12 +1,12 @@
 process KMER_ORD_PROJECT {
 
   tag "${meta.id}"
-  label 'process_medium'
-  label 'process_gpu'
+  label 'process_high'
+  label 'process_high_memory'
 
   conda "${moduleDir}/environment.yml"
   container "${workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container
-    ? '/ibex/project/c2303/20260614_make-kmer-ord-singularity-container/kmer-ord.linux.amd64.potentiallyWorking.needsTesting.20260629.sif'
+    ? '/ibex/project/c2303/20260614_make-kmer-ord-singularity-container/kmer-ord.linux.amd64.potentiallyWorking.needsTesting.20260719.sif'
     : 'docker://PLACEHOLDER_DOCKER_IMAGE'}"
 
   input:
@@ -33,7 +33,7 @@ process KMER_ORD_PROJECT {
         --input ${input} \\
         --output results \\
         --threads ${task.cpus} \\
-        --kmer-size ${kmer_size} \\
+        --kmer ${kmer_size} \\
         ${args}
 
     cat <<-END_VERSIONS > versions.yml
