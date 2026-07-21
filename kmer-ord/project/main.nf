@@ -1,6 +1,6 @@
 process KMER_ORD_PROJECT {
 
-  tag "${meta.id}"
+  tag "${meta.id}_k=${meta.kmer}"
   label 'process_high'
   label 'process_high_memory'
 
@@ -21,8 +21,11 @@ process KMER_ORD_PROJECT {
 
   script:
   def args = task.ext.args ?: ""
-  def prefix = task.ext.prefix ?: "${meta.id}"
-  def kmer_size = task.ext.kmer_size ?: 6
+  if (meta.threads != null && meta.threads > task.cpus) {
+    error("Sample ${meta.id} requests ${meta.threads} threads, but KMER_ORD_PROJECT was allocated ${task.cpus} CPUs.")
+  }
+  def threads = meta.threads ?: task.cpus
+  def sample_args = [meta.tiara ? "--tiara" : null, meta.dr ? "--dr ${meta.dr.join(',')}" : null, "--scale ${meta.scale}", "--norm ${meta.norm}", "--dims ${meta.dims}", meta.pca_pre ? "--pca-pre" : null, meta.keep_pcs != null ? "--keep-pcs ${meta.keep_pcs}" : null, meta.keep_variance != null ? "--keep-variance ${meta.keep_variance}" : null, meta.screen_params ? "--screen-params" : null].findAll { argument -> argument }.join(" ")
 
   """
     export HOME=\$PWD
@@ -32,8 +35,9 @@ process KMER_ORD_PROJECT {
     kmer-ord project \\
         --input ${input} \\
         --output results \\
-        --threads ${task.cpus} \\
-        --kmer ${kmer_size} \\
+        --threads ${threads} \\
+        --kmer ${meta.kmer} \\
+        ${sample_args} \\
         ${args}
 
     cat <<-END_VERSIONS > versions.yml
@@ -43,8 +47,6 @@ process KMER_ORD_PROJECT {
     """
 
   stub:
-  def prefix = task.ext.prefix ?: "${meta.id}"
-
   """
     mkdir -p results
 
